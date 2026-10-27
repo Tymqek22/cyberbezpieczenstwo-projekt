@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}{{ article.title }}{% endblock %}
+{% block content %}
+<section class="card">
+  <h1>{{ article.title }}</h1>
+  <p class="meta">{{ article.author.login if article.author else "—" }} · {{ article.updated_at.astimezone().strftime("%Y-%m-%d %H:%M") }}</p>
+  <div class="body">{{ article.body }}</div>
+  <div class="row">
+    <a href="/articles">← Lista</a>
+    {% if ctx.can("articles:edit") %}<a href="/articles/{{ article.id }}/edit">Edytuj</a>{% endif %}
+    {% if ctx.can("articles:delete") %}
+    <form method="post" action="/articles/{{ article.id }}/delete" class="inline" onsubmit="return confirm('Usunąć artykuł?')">
+      <input type="hidden" name="csrf_token" value="{{ ctx.csrf_token }}">
+      <button class="link danger">Usuń</button>
+    </form>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Użytkownicy{% endblock %}
+{% block content %}
+<section class="card">
+  <div class="row">
+    <h1>Użytkownicy</h1>
+    {% if ctx.can("users:manage") %}<a class="button" href="/admin/users/new">+ Dodaj użytkownika</a>{% endif %}
+  </div>
+  {% if not ctx.can("users:manage") %}<p class="alert info">Tryb tylko do odczytu.</p>{% endif %}
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th><th>Login</th><th>Imię i nazwisko</th><th>E-mail</th><th>Rola</th><th>Status</th>
+        <th>Hasło</th>{% if ctx.can("users:manage") %}<th>Akcje</th>{% endif %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in users %}
+      <tr>
+        <td>{{ u.id }}</td>
+        <td>{{ u.login }}{% if u.is_system %} <span class="badge">system</span>{% endif %}</td>
+        <td>{{ u.full_name }}</td>
+        <td>{{ u.email }}</td>
+        <td>{{ u.role.name }}</td>
+        <td>{% if u.is_blocked %}<span class="badge danger">zablokowany</span>{% else %}<span class="badge ok">aktywny</span>{% endif %}</td>
+        <td>
+          {% if u.otp_expires_at %}jednorazowe, ważne do {{ u.otp_expires_at.astimezone().strftime("%Y-%m-%d %H:%M") }}
+          {% elif u.must_change_password %}wymagana zmiana
+          {% elif u.password_changed_at %}zmienione {{ u.password_changed_at.astimezone().strftime("%Y-%m-%d") }}{% endif %}
+        </td>
+        {% if ctx.can("users:manage") %}
+        <td class="actions">
+          <a href="/admin/users/{{ u.id }}/edit">Edytuj</a>
+          <form method="post" action="/admin/users/{{ u.id }}/reset-password" class="inline"
+                onsubmit="return confirm('Wygenerować nowe hasło jednorazowe dla {{ u.login }}?')">
+            <input type="hidden" name="csrf_token" value="{{ ctx.csrf_token }}">
+            <button class="link">Reset hasła</button>
+          </form>
+          {% if not u.is_system %}
+            {% if u.is_blocked %}
+            <form method="post" action="/admin/users/{{ u.id }}/unblock" class="inline">
+              <input type="hidden" name="csrf_token" value="{{ ctx.csrf_token }}">
+              <button class="link">Odblokuj</button>
+            </form>
+            {% else %}
+            <form method="post" action="/admin/users/{{ u.id }}/block" class="inline">
+              <input type="hidden" name="csrf_token" value="{{ ctx.csrf_token }}">
+              <button class="link">Zablokuj</button>
+            </form>
+            {% endif %}
+            <form method="post" action="/admin/users/{{ u.id }}/delete" class="inline"
+                  onsubmit="return confirm('Usunąć użytkownika {{ u.login }}?')">
+              <input type="hidden" name="csrf_token" value="{{ ctx.csrf_token }}">
+              <button class="link danger">Usuń</button>
+            </form>
+          {% endif %}
+        </td>
+        {% endif %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

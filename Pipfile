@@ -1,0 +1,23 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+fastapi = "==0.161.0"
+uvicorn = {version = "==0.54.0", extras = ["standard"]}
+jinja2 = "==3.1.6"
+python-multipart = "==0.0.32"
+sqlalchemy = "==2.1.6"
+psycopg = {version = "==3.3.6", extras = ["binary"]}
+alembic = "==1.20.1"
+argon2-cffi = "==25.1.0"
+pydantic-settings = "==2.16.1"
+
+[dev-packages]
+pytest = "==9.1.1"
+httpx2 = "==2.16.0"
+testcontainers = {version = "==4.15.0", extras = ["postgres"]}
+
+[requires]
+python_version = "3.12"

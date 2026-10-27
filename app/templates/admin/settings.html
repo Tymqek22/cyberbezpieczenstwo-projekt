@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Ustawienia bezpieczeństwa{% endblock %}
+{% block content %}
+<section class="card narrow">
+  <h1>Ustawienia bezpieczeństwa</h1>
+  {% if saved %}<p class="alert success">Zapisano ustawienia.</p>{% endif %}
+  {% for e in errors %}<p class="alert error">{{ e }}</p>{% endfor %}
+  <form method="post" action="/admin/settings">
+    <input type="hidden" name="csrf_token" value="{{ ctx.csrf_token }}">
+    <p>Minimalna długość hasła: <strong>15 znaków</strong> (stała – wariant 9).</p>
+    <label class="checkbox">
+      <input type="checkbox" name="date_rule_enabled" value="true" {% if s.date_rule_enabled %}checked{% endif %}>
+      Polityka wariantu 9: hasło nie może być datą ani zawierać roku z zakresu 1950–2030
+    </label>
+    <label>Ważność hasła (dni, 0 = bez wygasania – zalecenie NIST)
+      <input type="number" name="password_max_age_days" min="0" max="3650" value="{{ s.password_max_age_days }}" required>
+    </label>
+    <label>Czas bezczynności sesji (minuty)
+      <input type="number" name="session_idle_minutes" min="1" max="1440" value="{{ s.session_idle_minutes }}" required>
+    </label>
+    <label>Liczba pamiętanych poprzednich haseł
+      <input type="number" name="password_history_count" min="1" max="24" value="{{ s.password_history_count }}" required>
+    </label>
+    <button type="submit">Zapisz</button>
+  </form>
+</section>
+{% endblock %}

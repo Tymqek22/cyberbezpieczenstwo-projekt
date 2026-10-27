@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}{% if article %}Edycja artykułu{% else %}Nowy artykuł{% endif %}{% endblock %}
+{% block content %}
+<section class="card">
+  <h1>{% if article %}Edycja artykułu{% else %}Nowy artykuł{% endif %}</h1>
+  {% for e in errors %}<p class="alert error">{{ e }}</p>{% endfor %}
+  <form method="post" action="{% if article %}/articles/{{ article.id }}/edit{% else %}/articles/new{% endif %}">
+    <input type="hidden" name="csrf_token" value="{{ ctx.csrf_token }}">
+    <label>Tytuł <input type="text" name="title" value="{{ form.title or '' }}" required maxlength="200"></label>
+    <label>Treść <textarea name="body" rows="10">{{ form.body or '' }}</textarea></label>
+    <button type="submit">Zapisz</button>
+    <a href="{% if article %}/articles/{{ article.id }}{% else %}/articles{% endif %}">Anuluj</a>
+  </form>
+</section>
+{% endblock %}

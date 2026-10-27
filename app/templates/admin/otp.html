@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Hasło jednorazowe{% endblock %}
+{% block content %}
+<section class="card narrow">
+  <h1>Hasło jednorazowe</h1>
+  <p>Operacja: <strong>{{ action }}</strong> dla użytkownika <strong>{{ target.login }}</strong>.</p>
+  <p class="otp">{{ otp }}</p>
+  <p>Ważne do: <strong>{{ target.otp_expires_at.astimezone().strftime("%Y-%m-%d %H:%M") }}</strong></p>
+  <p class="alert info">Hasło jest wyświetlane tylko raz – w bazie przechowywany jest wyłącznie jego hash.
+    Przekaż je użytkownikowi bezpiecznym kanałem. Przy pierwszym logowaniu będzie musiał ustawić własne hasło.</p>
+  <p><a href="/admin/users">Wróć do listy użytkowników</a></p>
+</section>
+{% endblock %}

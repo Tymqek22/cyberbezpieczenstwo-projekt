@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Artykuły{% endblock %}
+{% block content %}
+<section class="card">
+  <div class="row">
+    <h1>Artykuły</h1>
+    {% if ctx.can("articles:create") %}<a class="button" href="/articles/new">+ Nowy artykuł</a>{% endif %}
+  </div>
+  {% for a in articles %}
+  <article class="item">
+    <h2><a href="/articles/{{ a.id }}">{{ a.title }}</a></h2>
+    <p class="meta">{{ a.author.login if a.author else "—" }} · {{ a.created_at.astimezone().strftime("%Y-%m-%d %H:%M") }}</p>
+  </article>
+  {% else %}
+  <p>Brak artykułów.</p>
+  {% endfor %}
+</section>
+{% endblock %}

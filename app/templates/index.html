@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Start{% endblock %}
+{% block content %}
+<section class="card">
+  {% if password_changed %}<p class="alert success">Hasło zostało zmienione.</p>{% endif %}
+  <h1>Witaj, {{ ctx.user.full_name or ctx.user.login }}</h1>
+  <p>Rola: <strong>{{ ctx.user.role.name }}</strong></p>
+  <h2>Twoje uprawnienia</h2>
+  <ul>
+    {% for p in ctx.user.role.permissions|sort(attribute="code") %}
+    <li><code>{{ p.code }}</code> – {{ p.description }}</li>
+    {% endfor %}
+  </ul>
+</section>
+{% endblock %}

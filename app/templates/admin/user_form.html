@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}{% if target %}Edycja użytkownika{% else %}Nowy użytkownik{% endif %}{% endblock %}
+{% block content %}
+<section class="card narrow">
+  <h1>{% if target %}Edycja: {{ target.login }}{% else %}Nowy użytkownik{% endif %}</h1>
+  {% for e in errors %}<p class="alert error">{{ e }}</p>{% endfor %}
+  <form method="post" action="{% if target %}/admin/users/{{ target.id }}/edit{% else %}/admin/users/new{% endif %}">
+    <input type="hidden" name="csrf_token" value="{{ ctx.csrf_token }}">
+    {% if not target %}
+    <label>Login
+      <input type="text" name="login" value="{{ form.login or '' }}" required pattern="[A-Za-z0-9._\-]{3,64}">
+    </label>
+    {% endif %}
+    <label>Imię <input type="text" name="first_name" value="{{ form.first_name or '' }}" required></label>
+    <label>Nazwisko <input type="text" name="last_name" value="{{ form.last_name or '' }}" required></label>
+    <label>E-mail <input type="email" name="email" value="{{ form.email or '' }}" required></label>
+    <label>Rola
+      <select name="role_id" {% if target and target.is_system %}disabled{% endif %}>
+        {% for r in roles %}
+        <option value="{{ r.id }}" {% if form.role_id == r.id %}selected{% endif %}>{{ r.name }}</option>
+        {% endfor %}
+      </select>
+      {% if target and target.is_system %}<input type="hidden" name="role_id" value="{{ target.role_id }}">{% endif %}
+    </label>
+    {% if not target %}<p class="hint">Po utworzeniu konta zostanie wygenerowane hasło jednorazowe (12 znaków, ważne 24 h).</p>{% endif %}
+    <button type="submit">Zapisz</button>
+    <a href="/admin/users">Anuluj</a>
+  </form>
+</section>
+{% endblock %}

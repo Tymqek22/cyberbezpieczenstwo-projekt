@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}403{% endblock %}
+{% block content %}
+<section class="card narrow">
+  <h1>403 – Brak dostępu</h1>
+  <p>{{ message or "Nie masz uprawnień do wykonania tej operacji." }}</p>
+  <p><a href="/">Wróć na stronę główną</a></p>
+</section>
+{% endblock %}

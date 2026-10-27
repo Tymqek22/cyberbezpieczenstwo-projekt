@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Aplikacja{% endblock %} – Moduł 1</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body{% if ctx %} data-idle-minutes="{{ ctx.app_settings.session_idle_minutes }}"{% endif %}>
+  <header class="topbar">
+    <span class="brand">🔐 Moduł 1</span>
+    {% if ctx %}
+    <nav>
+      {% if ctx.can("articles:read") %}<a href="/articles">Artykuły</a>{% endif %}
+      {% if ctx.can("users:read") %}<a href="/admin/users">Użytkownicy</a>{% endif %}
+      {% if ctx.can("settings:manage") %}<a href="/admin/settings">Ustawienia</a>{% endif %}
+      <a href="/account/change-password">Zmiana hasła</a>
+    </nav>
+    <div class="who">
+      {{ ctx.user.login }} <span class="badge">{{ ctx.user.role.name }}</span>
+      <span class="idle" id="idle-counter" title="Czas do automatycznego wylogowania"></span>
+      <form method="post" action="/logout" class="inline">
+        <input type="hidden" name="csrf_token" value="{{ ctx.csrf_token }}">
+        <button type="submit" class="link">Wyloguj</button>
+      </form>
+    </div>
+    {% endif %}
+  </header>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+  {% if ctx %}<script src="/static/idle.js"></script>{% endif %}
+</body>
+</html>
