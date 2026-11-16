@@ -4,10 +4,12 @@ from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.db import get_db
 from app.deps import AuthContext, get_session_context, password_change_required, verify_csrf
 from app.models import PasswordHistory, User
-from app.security import sessions
+from app.security import captcha, sessions
+from app.security.audit import log_event
 from app.security.passwords import hash_password, verify_password
 from app.security.policy import validate_password
 from app.templating import templates
@@ -39,7 +41,8 @@ def _render(request: Request, ctx: AuthContext, forced: bool, errors: list[str] 
     return templates.TemplateResponse(
         request,
         "account/change_password.html",
-        {"ctx": ctx, "forced": forced, "errors": errors or [], "date_rule": ctx.app_settings.date_rule_enabled},
+        {"ctx": ctx, "forced": forced, "errors": errors or [], "date_rule": ctx.app_settings.date_rule_enabled,
+         "turnstile_site_key": settings.turnstile_site_key},
         status_code=status,
     )
 
@@ -55,12 +58,19 @@ def change_password(
     old_password: str = Form(""),
     new_password: str = Form(...),
     new_password_repeat: str = Form(...),
+    captcha_token: str = Form("", alias=captcha.TOKEN_FIELD),
     ctx: AuthContext = Depends(get_session_context),
     db: Session = Depends(get_db),
 ):
     user = ctx.user
     forced = password_change_required(user, ctx.app_settings)
     errors: list[str] = []
+    ip = request.client.host if request.client else ""
+
+    # A form without a valid CAPTCHA token is rejected before any password is checked.
+    if not captcha.verify_turnstile(captcha_token, ip):
+        log_event("PASSWORD_CHANGE_CAPTCHA_FAIL", user.login, ip, token_present=bool(captcha_token))
+        return _render(request, ctx, forced, ["Weryfikacja CAPTCHA nie powiodła się. Spróbuj ponownie."], status=400)
 
     # On a forced change the user has just entered their password at login.
     if not forced and not verify_password(user.password_hash, old_password):
@@ -78,4 +88,5 @@ def change_password(
 
     set_new_password(db, user, new_password, ctx.app_settings.password_history_count)
     sessions.revoke_all_for_user(db, user.id, except_session_id=ctx.session.id)
+    log_event("PASSWORD_CHANGE", user.login, ip, forced=forced)
     return RedirectResponse("/?password_changed=1", status_code=303)

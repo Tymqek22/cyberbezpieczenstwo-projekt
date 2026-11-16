@@ -5,7 +5,7 @@ from app import rbac
 from app.models import User, UserSession
 from app.security.passwords import verify_password
 
-from .conftest import PASSWORD, csrf_from, login
+from .conftest import CAPTCHA, PASSWORD, csrf_from, login
 
 LOGIN_ERROR = "Login lub hasło niepoprawne"
 NEW_PASSWORD = "nowe bardzo dlugie haslo"
@@ -63,11 +63,11 @@ def test_otp_forces_password_change(client, admin, db):
 
     token = csrf_from(client)
     r = client.post("/account/change-password",
-                    data={"new_password": NEW_PASSWORD, "new_password_repeat": "inne", "csrf_token": token})
+                    data={"new_password": NEW_PASSWORD, "new_password_repeat": "inne", "csrf_token": token, **CAPTCHA})
     assert r.status_code == 400 and "nie są identyczne" in r.text
 
     r = client.post("/account/change-password",
-                    data={"new_password": NEW_PASSWORD, "new_password_repeat": NEW_PASSWORD, "csrf_token": token})
+                    data={"new_password": NEW_PASSWORD, "new_password_repeat": NEW_PASSWORD, "csrf_token": token, **CAPTCHA})
     assert r.status_code == 303
     assert client.get("/articles").status_code == 200
 
@@ -103,7 +103,7 @@ def test_change_password_requires_old_and_policy(client, make_user):
     def change(old, new):
         return client.post("/account/change-password",
                            data={"old_password": old, "new_password": new, "new_password_repeat": new,
-                                 "csrf_token": token})
+                                 "csrf_token": token, **CAPTCHA})
 
     assert "Stare hasło jest niepoprawne" in change("zle stare haslo", NEW_PASSWORD).text
     assert "15 znaków" in change(PASSWORD, "za krotkie").text
@@ -124,7 +124,7 @@ def test_change_password_date_rule(client, admin, db):
     token = csrf_from(client)
     r = client.post("/account/change-password",
                     data={"old_password": PASSWORD, "new_password": "moje haslo 1990 ok",
-                          "new_password_repeat": "moje haslo 1990 ok", "csrf_token": token})
+                          "new_password_repeat": "moje haslo 1990 ok", "csrf_token": token, **CAPTCHA})
     assert r.status_code == 400 and "1950–2030" in r.text
 
 

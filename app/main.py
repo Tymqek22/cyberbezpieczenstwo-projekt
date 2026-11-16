@@ -9,7 +9,7 @@ from app.routers import account, admin, articles, auth
 from app.security.sessions import clear_session_cookie
 from app.templating import templates
 
-app = FastAPI(title="Moduł 1 - uwierzytelnianie i autoryzacja", docs_url=None, redoc_url=None, openapi_url=None)
+app = FastAPI(title="Moduł 1-2 - uwierzytelnianie, autoryzacja, ochrona przed botami", docs_url=None, redoc_url=None, openapi_url=None)
 app.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static")
 
 app.include_router(auth.router)

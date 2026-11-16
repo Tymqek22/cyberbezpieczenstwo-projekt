@@ -37,3 +37,7 @@ td.actions > * { margin-right: .6rem; }
 .body { white-space: pre-wrap; margin: 1rem 0; }
 .item { border-bottom: 1px solid #e5e7eb; }
 @media (max-width: 700px) { table { display: block; overflow-x: auto; } }
+/* Module 2 */
+.hp { position: absolute; left: -10000px; top: auto; width: 1px; height: 1px; overflow: hidden; }
+.cf-turnstile { margin: .8rem 0; }
+button:disabled { background: #9ca3af; cursor: not-allowed; }

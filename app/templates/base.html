@@ -3,12 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Aplikacja{% endblock %} – Moduł 1</title>
+  <title>{% block title %}Aplikacja{% endblock %} – Moduł 2</title>
   <link rel="stylesheet" href="/static/style.css">
+  {% block head %}{% endblock %}
 </head>
 <body{% if ctx %} data-idle-minutes="{{ ctx.app_settings.session_idle_minutes }}"{% endif %}>
   <header class="topbar">
-    <span class="brand">🔐 Moduł 1</span>
+    <span class="brand">🔐 Moduł 2</span>
     {% if ctx %}
     <nav>
       {% if ctx.can("articles:read") %}<a href="/articles">Artykuły</a>{% endif %}

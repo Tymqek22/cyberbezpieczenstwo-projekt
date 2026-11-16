@@ -21,6 +21,9 @@
     <label>Liczba pamiętanych poprzednich haseł
       <input type="number" name="password_history_count" min="1" max="24" value="{{ s.password_history_count }}" required>
     </label>
+    <label>Limit błędnych logowań (po jego przekroczeniu konto jest blokowane na 15 minut)
+      <input type="number" name="max_failed_logins" min="1" max="20" value="{{ s.max_failed_logins }}" required>
+    </label>
     <button type="submit">Zapisz</button>
   </form>
 </section>

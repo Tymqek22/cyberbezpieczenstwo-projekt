@@ -1,4 +1,5 @@
-"""Data initialization: roles, permissions, settings, the ADMIN account and 8 test users.
+"""Data initialization: roles, permissions, settings, the ADMIN account, 8 test users
+and the decoy (honeytoken) account from module 2.
 
 Usage:  pipenv run python -m scripts.seed [--reset-otp]
 The script is idempotent - existing accounts are not overwritten (unless --reset-otp).
@@ -26,6 +27,12 @@ TEST_USERS = [
     ("czytelnik2", "Grażyna", "Zielińska", rbac.ROLE_READER),
     ("czytelnik3", "Henryk", "Szymański", rbac.ROLE_READER),
 ]
+
+# Module 2: decoy account. Its credentials are deliberately "leaked" in an HTML comment
+# on the login page (app/templates/login.html). Nobody legitimate uses it, so every
+# login attempt is an incident: the app logs it and triggers a Canarytokens alert.
+HONEYTOKEN_LOGIN = "backup_admin"
+HONEYTOKEN_PASSWORD = "Backup#Serwis2024"
 
 SAMPLE_ARTICLES = [
     ("Witamy w systemie", "Przykładowy artykuł. Redaktorzy mogą go edytować, czytelnicy tylko czytać."),
@@ -75,6 +82,24 @@ def ensure_user(db: Session, login: str, first: str, last: str, role: Role, *, i
     return otp
 
 
+def ensure_honeytoken(db: Session, role: Role) -> bool:
+    """Creates the decoy account. Returns True if it was created."""
+    if db.scalar(select(User).where(User.login == HONEYTOKEN_LOGIN)) is not None:
+        return False
+    db.add(User(
+        login=HONEYTOKEN_LOGIN,
+        first_name="Backup",
+        last_name="Serwis",
+        email="backup@example.com",
+        role=role,
+        password_hash=hash_password(HONEYTOKEN_PASSWORD),
+        must_change_password=False,
+        is_honeytoken=True,
+    ))
+    db.commit()
+    return True
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--reset-otp", action="store_true", help="wygeneruj nowe hasła jednorazowe dla kont z seeda")
@@ -92,6 +117,9 @@ def main() -> None:
         for login, first, last, role_name, is_system in accounts:
             otp = ensure_user(db, login, first, last, roles[role_name], is_system=is_system, reset=args.reset_otp)
             print(f"{login:<12} {role_name:<14} {otp or '(konto istnieje - bez zmian)'}")
+
+        created = ensure_honeytoken(db, roles[rbac.ROLE_READER])
+        print(f"{HONEYTOKEN_LOGIN:<12} {'honeytoken':<14} {'utworzone' if created else '(konto istnieje - bez zmian)'}")
 
         if not db.scalar(select(Article).limit(1)):
             admin = db.scalar(select(User).where(User.login == "ADMIN"))

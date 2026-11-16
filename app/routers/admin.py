@@ -1,4 +1,5 @@
 import re
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
@@ -9,7 +10,7 @@ from app import rbac
 from app.db import get_db
 from app.deps import AuthContext, require_permission, verify_csrf
 from app.models import Role, User
-from app.security import sessions
+from app.security import lockout, sessions
 from app.security.otp import generate_otp, otp_expiry
 from app.security.passwords import hash_password
 from app.templating import templates
@@ -64,7 +65,9 @@ def _show_otp(request: Request, ctx: AuthContext, user: User, otp: str, action: 
 @router.get("/users")
 def users_list(request: Request, ctx: AuthContext = Depends(can_read_users), db: Session = Depends(get_db)):
     users = db.scalars(select(User).order_by(User.id)).all()
-    return templates.TemplateResponse(request, "admin/users.html", {"ctx": ctx, "users": users})
+    return templates.TemplateResponse(
+        request, "admin/users.html", {"ctx": ctx, "users": users, "now": datetime.now(timezone.utc)}
+    )
 
 
 # --- Create ------------------------------------------------------------------
@@ -187,6 +190,7 @@ def user_unblock(user_id: int, ctx: AuthContext = Depends(can_manage_users), db:
     user = _get_user(db, user_id)
     user.is_blocked = False
     db.commit()
+    lockout.reset(db, user)  # also lifts a failed-login lockout
     return RedirectResponse("/admin/users", status_code=303)
 
 
@@ -196,6 +200,7 @@ def user_reset_password(
 ):
     user = _get_user(db, user_id)
     otp = _assign_otp(db, user)
+    lockout.reset(db, user)
     return _show_otp(request, ctx, user, otp, "reset hasła")
 
 
@@ -224,6 +229,7 @@ def settings_save(
     password_max_age_days: int = Form(...),
     session_idle_minutes: int = Form(...),
     password_history_count: int = Form(...),
+    max_failed_logins: int = Form(...),
     ctx: AuthContext = Depends(can_manage_settings),
     db: Session = Depends(get_db),
 ):
@@ -234,12 +240,15 @@ def settings_save(
         errors.append("Czas bezczynności: 1–1440 minut.")
     if not 1 <= password_history_count <= 24:
         errors.append("Liczba pamiętanych haseł: 1–24.")
+    if not 1 <= max_failed_logins <= 20:
+        errors.append("Limit błędnych logowań: 1–20.")
     s = ctx.app_settings
     if not errors:
         s.date_rule_enabled = date_rule_enabled
         s.password_max_age_days = password_max_age_days
         s.session_idle_minutes = session_idle_minutes
         s.password_history_count = password_history_count
+        s.max_failed_logins = max_failed_logins
         db.commit()
     return templates.TemplateResponse(
         request,

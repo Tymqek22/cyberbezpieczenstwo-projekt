@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Table, Text
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Table, Text, false
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
@@ -54,6 +54,10 @@ class User(Base):
     must_change_password: Mapped[bool] = mapped_column(Boolean, default=True)
     password_changed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     otp_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Module 2: failed-login lockout and decoy (honeytoken) account
+    failed_login_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    is_honeytoken: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
 
@@ -106,6 +110,7 @@ class AppSettings(Base):
     password_max_age_days: Mapped[int] = mapped_column(Integer, default=0)
     session_idle_minutes: Mapped[int] = mapped_column(Integer, default=15)
     password_history_count: Mapped[int] = mapped_column(Integer, default=5)
+    max_failed_logins: Mapped[int] = mapped_column(Integer, default=5, server_default="5")
 
 
 class Article(Base):
